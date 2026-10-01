@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ForgeQuest — Java 2D Game Blueprint Builder</title>
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --panel: #121722;
+      --panel-2: #181f2c;
+      --line: #2a3445;
+      --text: #eef2f7;
+      --muted: #9ba8ba;
+      --gold: #e8b44d;
+      --gold-2: #ffd87a;
+      --blue: #62a8ff;
+      --green: #67d697;
+      --red: #ff7b7b;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(232, 180, 77, 0.12), transparent 28rem),
+        radial-gradient(circle at 92% 18%, rgba(98, 168, 255, 0.1), transparent 32rem),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input, textarea, select { font: inherit; }
+
+    button { cursor: pointer; }
+
+    a { color: inherit; }
+
+    .shell {
+      width: min(1420px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 64px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 22px 24px;
+      border: 1px solid rgba(232, 180, 77, 0.22);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(232, 180, 77, 0.12), rgba(18, 23, 34, 0.92) 42%, rgba(98, 168, 255, 0.08));
+      box-shadow: var(--shadow);
+    }
+
+    .brand { display: flex; align-items: center; gap: 16px; }
+
+    .crest {
+      width: 54px;
+      height: 62px;
+      display: grid;
+      place-items: center;
+      color: #17120a;
+      font-size: 28px;
+      background: linear-gradient(145deg, var(--gold-2), #b67820);
+      clip-path: polygon(50% 0, 94% 18%, 86% 72%, 50% 100%, 14% 72%, 6% 18%);
+      filter: drop-shadow(0 8px 16px rgba(232, 180, 77, 0.25));
+    }
+
+    h1, h2, h3, h4, p { margin-top: 0; }
+    h1 { margin-bottom: 5px; font-size: clamp(1.55rem, 3vw, 2.45rem); letter-spacing: -0.04em; }
+    h2 { margin-bottom: 7px; font-size: 1.2rem; }
+    h3 { margin-bottom: 8px; font-size: 1rem; }
+    p { color: var(--muted); line-height: 1.55; }
+    .hero p { margin: 0; }
+
+    .hero-actions, .toolbar, .result-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      padding: 9px 14px;
+      color: var(--text);
+      background: #171e2a;
+      transition: 160ms ease;
+    }
+
+    .button:hover { border-color: #4a5970; transform: translateY(-1px); }
+    .button.primary { color: #17120a; border-color: #f2c866; background: linear-gradient(135deg, var(--gold-2), var(--gold)); font-weight: 800; }
+    .button.danger { color: #ffd6d6; border-color: rgba(255, 123, 123, 0.4); background: rgba(255, 123, 123, 0.08); }
+    .button.small { min-height: 34px; padding: 6px 10px; font-size: 0.84rem; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 0.96fr) minmax(420px, 1.04fr);
+      gap: 20px;
+      margin-top: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(18, 23, 34, 0.92);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 17px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.018);
+    }
+
+    .panel-header p { margin: 0; font-size: 0.9rem; }
+    .panel-body { padding: 20px; }
+
+    .progress-wrap { margin-top: 14px; }
+    .progress-meta { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 7px; color: var(--muted); font-size: 0.82rem; }
+    .progress { height: 8px; overflow: hidden; border-radius: 999px; background: #090c12; border: 1px solid #222a38; }
+    .progress > div { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--gold), var(--green)); transition: width 220ms ease; }
+
+    .section-nav {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .nav-chip {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 7px 11px;
+      color: var(--muted);
+      background: #111722;
+      font-size: 0.82rem;
+    }
+
+    .nav-chip.active { color: #1d1608; border-color: var(--gold); background: var(--gold); font-weight: 800; }
+
+    .form-section { display: none; animation: reveal 180ms ease; }
+    .form-section.active { display: block; }
+    @keyframes reveal { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    .section-intro { margin-bottom: 18px; }
+    .section-intro p { margin-bottom: 0; font-size: 0.9rem; }
+
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+    .field-grid.one { grid-template-columns: 1fr; }
+    .field-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .field.full { grid-column: 1 / -1; }
+
+    label { display: block; margin-bottom: 7px; color: #d8e0eb; font-size: 0.84rem; font-weight: 700; }
+    .hint { margin: -2px 0 7px; color: #7f8da1; font-size: 0.76rem; line-height: 1.4; }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: none;
+      padding: 11px 12px;
+      color: var(--text);
+      background: #0d121b;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    textarea { min-height: 92px; resize: vertical; line-height: 1.5; }
+    input:focus, textarea:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(98, 168, 255, 0.12); }
+    input::placeholder, textarea::placeholder { color: #5f6b7b; }
+
+    .choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+
+    .choice {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      min-height: 52px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #0e141e;
+    }
+
+    .choice:hover { border-color: #46556c; }
+    .choice input { width: auto; margin-top: 3px; accent-color: var(--gold); }
+    .choice label { margin: 0; cursor: pointer; font-weight: 700; }
+    .choice span { display: block; margin-top: 2px; color: var(--muted); font-size: 0.73rem; font-weight: 400; }
+
+    .form-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 22px;
+      padding-top: 17px;
+      border-top: 1px solid var(--line);
+    }
+
+    .sticky { position: sticky; top: 16px; }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      min-height: 530px;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .empty-icon { font-size: 52px; margin-bottom: 15px; filter: grayscale(0.2); }
+    .empty-state p { max-width: 470px; }
+
+    .results { display: none; }
+    .results.visible { display: block; }
+
+    .result-actions {
+      justify-content: space-between;
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #0f141e;
+    }
+
+    .result-actions > div { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .result-scroll { max-height: calc(100vh - 176px); overflow: auto; padding: 20px; scrollbar-width: thin; }
+
+    .blueprint-title {
+      padding: 18px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(232, 180, 77, 0.28);
+      border-radius: 13px;
+      background: linear-gradient(135deg, rgba(232, 180, 77, 0.1), rgba(98, 168, 255, 0.05));
+    }
+
+    .blueprint-title h2 { margin-bottom: 5px; font-size: 1.45rem; color: var(--gold-2); }
+    .blueprint-title p { margin: 0; }
+
+    .result-block {
+      margin-bottom: 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0e141e;
+    }
+
+    .result-block summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 13px 15px;
+      cursor: pointer;
+      color: #e8edf5;
+      font-weight: 800;
+      list-style: none;
+      background: rgba(255, 255, 255, 0.018);
+    }
+
+    .result-block summary::-webkit-details-marker { display: none; }
+    .result-block summary::after { content: "+"; color: var(--gold); font-size: 1.2rem; }
+    .result-block[open] summary::after { content: "−"; }
+    .result-content { padding: 15px; border-top: 1px solid var(--line); }
+    .result-content p:last-child, .result-content ul:last-child { margin-bottom: 0; }
+
+    .tag-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .tag { padding: 5px 8px; border: 1px solid #38445a; border-radius: 999px; color: #cdd6e2; background: #151c28; font-size: 0.76rem; }
+
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .card { padding: 12px; border: 1px solid #263144; border-radius: 10px; background: #111823; }
+    .card h4 { margin-bottom: 5px; color: var(--gold-2); }
+    .card p { margin-bottom: 0; font-size: 0.84rem; }
+
+    .code-list, .tree {
+      margin: 0;
+      padding: 13px;
+      overflow-x: auto;
+      border: 1px solid #263044;
+      border-radius: 10px;
+      color: #cfe1ff;
+      background: #090d14;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.78rem;
+      line-height: 1.65;
+      white-space: pre;
+    }
+
+    .timeline { display: grid; gap: 10px; }
+    .timeline-item { display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: start; }
+    .timeline-label { padding: 5px 7px; border-radius: 8px; color: #1d1608; background: var(--gold); font-size: 0.75rem; font-weight: 900; text-align: center; }
+    .timeline-body { padding-bottom: 11px; border-bottom: 1px dashed #354156; }
+    .timeline-body strong { display: block; margin-bottom: 3px; }
+    .timeline-body p { margin: 0; font-size: 0.84rem; }
+
+    .notice {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-left: 3px solid var(--blue);
+      border-radius: 7px;
+      color: #bfcee1;
+      background: rgba(98, 168, 255, 0.08);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 10;
+      padding: 11px 15px;
+      border: 1px solid rgba(103, 214, 151, 0.45);
+      border-radius: 10px;
+      color: #d9ffea;
+      background: #153526;
+      box-shadow: var(--shadow);
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: 180ms ease;
+    }
+
+    .toast.show { transform: none; opacity: 1; }
+    .muted { color: var(--muted); }
+
+    @media (max-width: 1050px) {
+      .layout { grid-template-columns: 1fr; }
+      .sticky { position: static; }
+      .result-scroll { max-height: none; }
+    }
+
+    @media (max-width: 700px) {
+      .shell { width: min(100% - 18px, 1420px); padding-top: 9px; }
+      .hero { align-items: flex-start; flex-direction: column; padding: 18px; }
+      .field-grid, .field-grid.three, .choice-grid, .cards { grid-template-columns: 1fr; }
+      .panel-body, .result-scroll { padding: 15px; }
+      .section-nav { padding-inline: 15px; }
+      .timeline-item { grid-template-columns: 60px 1fr; }
+    }
+
+    @media print {
+      body { color: #111; background: white; }
+      .hero, .left-panel, .result-actions, .empty-state { display: none !important; }
+      .layout { display: block; margin: 0; }
+      .panel, .result-block, .blueprint-title { border-color: #bbb; box-shadow: none; background: white; }
+      .results { display: block !important; }
+      .result-scroll { max-height: none; overflow: visible; }
+      .result-block { break-inside: avoid; }
+      .result-content { display: block !important; }
+      p, .muted { color: #333; }
+      .code-list, .tree { color: #111; background: #f5f5f5; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="brand">
+        <div class="crest" aria-hidden="true">⚔</div>
+        <div>
+          <h1>ForgeQuest Blueprint Builder</h1>
+          <p>Turn your original story and combat ideas into a practical Java 2D game architecture.</p>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button class="button" id="loadExample" type="button">Load example</button>
+        <button class="button danger" id="clearDraft" type="button">Clear draft</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section class="panel left-panel">
+        <div class="panel-header">
+          <h2>Game Design Interview</h2>
+          <p>Complete each section. Your answers are saved in this browser automatically.</p>
+          <div class="progress-wrap">
+            <div class="progress-meta"><span>Blueprint completeness</span><strong id="progressText">0%</strong></div>
+            <div class="progress"><div id="progressBar"></div></div>
+          </div>
+        </div>
+
+        <nav class="section-nav" aria-label="Blueprint sections">
+          <button class="nav-chip active" data-section="identity" type="button">1. Identity</button>
+          <button class="nav-chip" data-section="story" type="button">2. Story</button>
+          <button class="nav-chip" data-section="gameplay" type="button">3. Gameplay</button>
+          <button class="nav-chip" data-section="content" type="button">4. Content</button>
+          <button class="nav-chip" data-section="technical" type="button">5. Technical</button>
+        </nav>
+
+        <form id="blueprintForm" class="panel-body">
+          <section class="form-section active" data-page="identity">
+            <div class="section-intro">
+              <h2>Game Identity</h2>
+              <p>Define the fantasy, audience, and creative direction before choosing implementation details.</p>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="title">Working title *</label>
+                <input id="title" name="title" required placeholder="e.g. Ashes of the Crown" />
+              </div>
+              <div class="field">
+                <label for="genre">Primary genre</label>
+                <select id="genre" name="genre">
+                  <option>2D action RPG</option>
+                  <option>2D beat 'em up</option>
+                  <option>Action roguelite</option>
+                  <option>Story-driven platformer</option>
+                  <option>Tactical action RPG</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label for="pitch">One-sentence pitch *</label>
+                <textarea id="pitch" name="pitch" required placeholder="A disgraced royal guard gathers unlikely allies to stop a war fueled by stolen memories."></textarea>
+              </div>
+              <div class="field">
+                <label for="tone">Tone</label>
+                <select id="tone" name="tone">
+                  <option>Heroic with humor</option>
+                  <option>Dark fantasy</option>
+                  <option>Hopeful adventure</option>
+                  <option>Tragic and political</option>
+                  <option>Whimsical fantasy</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="audience">Target audience</label>
+                <input id="audience" name="audience" placeholder="Teen and adult action-RPG fans" />
+              </div>
+              <div class="field">
+                <label for="platform">Target platform</label>
+                <select id="platform" name="platform">
+                  <option>Windows / Linux / macOS</option>
+                  <option>Windows only</option>
+                  <option>Desktop and Android</option>
+                  <option>Android</option>
+                  <option>Browser via TeaVM</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="players">Player mode</label>
+                <select id="players" name="players">
+                  <option value="single">Single-player</option>
+                  <option value="local">Single-player + local co-op</option>
+                  <option value="online">Single-player + online co-op</option>
+                  <option value="both">Local and online co-op</option>
+                </select>
+              </div>
+              <div class="field full">
+                <label for="pillars">Three design pillars</label>
+                <p class="hint">Comma-separated promises that every feature should support.</p>
+                <input id="pillars" name="pillars" placeholder="Readable combat, memorable companions, meaningful choices" />
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section" data-page="story">
+            <div class="section-intro">
+              <h2>Story Foundation</h2>
+              <p>Focus on character motivation, escalating consequences, and decisions expressed through gameplay.</p>
+            </div>
+            <div class="field-grid">
+              <div class="field full">
+                <label for="world">World and setting *</label>
+                <textarea id="world" name="world" required placeholder="Describe the kingdom, factions, magic, technology, and current crisis."></textarea>
+              </div>
+              <div class="field">
+                <label for="hero">Protagonist *</label>
+                <textarea id="hero" name="hero" required placeholder="Who are they, what do they want, and what personal flaw holds them back?"></textarea>
+              </div>
+              <div class="field">
+                <label for="villain">Main antagonist *</label>
+                <textarea id="villain" name="villain" required placeholder="What do they want, why do they believe they are right, and how do they pressure the hero?"></textarea>
+              </div>
+              <div class="field">
+                <label for="inciting">Inciting incident</label>
+                <textarea id="inciting" name="inciting" placeholder="The event that makes the old life impossible."></textarea>
+              </div>
+              <div class="field">
+                <label for="stakes">Central stakes</label>
+                <textarea id="stakes" name="stakes" placeholder="What is lost personally and globally if the hero fails?"></textarea>
+              </div>
+              <div class="field full">
+                <label for="theme">Theme or central question</label>
+                <input id="theme" name="theme" placeholder="Can loyalty survive when the truth destroys the cause it served?" />
+              </div>
+              <div class="field full">
+                <label for="ending">Intended ending</label>
+                <textarea id="ending" name="ending" placeholder="Describe the final choice, cost of victory, and how the protagonist changes."></textarea>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section" data-page="gameplay">
+            <div class="section-intro">
+              <h2>Gameplay Systems</h2>
+              <p>Select only systems that support the core fantasy. The generator adds matching Java services, components, and screens.</p>
+            </div>
+            <div class="field-grid one">
+              <div class="field">
+                <label>Core systems</label>
+                <div class="choice-grid" id="systemChoices">
+                  <div class="choice"><input type="checkbox" id="combat" name="systems" value="combat" checked><label for="combat">Real-time combat<span>Attacks, combos, hit detection, damage, stagger</span></label></div>
+                  <div class="choice"><input type="checkbox" id="abilities" name="systems" value="abilities" checked><label for="abilities">Abilities and cooldowns<span>Active skills, costs, effects, status conditions</span></label></div>
+                  <div class="choice"><input type="checkbox" id="classes" name="systems" value="classes" checked><label for="classes">Playable archetypes<span>Distinct heroes, roles, stats, and ability kits</span></label></div>
+                  <div class="choice"><input type="checkbox" id="equipment" name="systems" value="equipment" checked><label for="equipment">Equipment and loot<span>Weapons, armor, rarity, modifiers, inventory</span></label></div>
+                  <div class="choice"><input type="checkbox" id="progression" name="systems" value="progression" checked><label for="progression">Character progression<span>Experience, levels, talents, stat growth</span></label></div>
+                  <div class="choice"><input type="checkbox" id="quests" name="systems" value="quests" checked><label for="quests">Quests and objectives<span>Main quests, side quests, rewards, tracking</span></label></div>
+                  <div class="choice"><input type="checkbox" id="dialogue" name="systems" value="dialogue" checked><label for="dialogue">Dialogue system<span>Conversations, portraits, conditions, events</span></label></div>
+                  <div class="choice"><input type="checkbox" id="choices" name="systems" value="choices"><label for="choices">Narrative choices<span>Flags, relationships, branching outcomes</span></label></div>
+                  <div class="choice"><input type="checkbox" id="companions" name="systems" value="companions"><label for="companions">Companions<span>Recruitment, AI, affinity, companion quests</span></label></div>
+                  <div class="choice"><input type="checkbox" id="crafting" name="systems" value="crafting"><label for="crafting">Crafting<span>Recipes, materials, upgrades, vendors</span></label></div>
+                  <div class="choice"><input type="checkbox" id="bosses" name="systems" value="bosses" checked><label for="bosses">Multi-phase bosses<span>Telegraphed patterns, phases, arena events</span></label></div>
+                  <div class="choice"><input type="checkbox" id="procedural" name="systems" value="procedural"><label for="procedural">Procedural encounters<span>Weighted rooms, enemy groups, reward tables</span></label></div>
+                </div>
+              </div>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="combatStyle">Combat feel</label>
+                  <select id="combatStyle" name="combatStyle">
+                    <option>Fast arcade combat</option>
+                    <option>Deliberate action combat</option>
+                    <option>Combo-focused beat 'em up</option>
+                    <option>Ability-driven action RPG</option>
+                    <option>Tactical pause-and-play</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="perspective">Camera / perspective</label>
+                  <select id="perspective" name="perspective">
+                    <option>Side-view with lane movement</option>
+                    <option>Top-down</option>
+                    <option>Isometric</option>
+                    <option>Side-scrolling platform view</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="session">Target mission length</label>
+                  <input id="session" name="session" placeholder="15–25 minutes" />
+                </div>
+                <div class="field">
+                  <label for="difficulty">Difficulty philosophy</label>
+                  <input id="difficulty" name="difficulty" placeholder="Readable, fair, adjustable assists" />
+                </div>
+                <div class="field full">
+                  <label for="loop">Core gameplay loop</label>
+                  <textarea id="loop" name="loop" placeholder="Accept mission → explore and fight → make a choice → defeat boss → return to hub → upgrade and talk to allies."></textarea>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section" data-page="content">
+            <div class="section-intro">
+              <h2>Characters and Content</h2>
+              <p>Set a realistic content target. Separate entries with commas where requested.</p>
+            </div>
+            <div class="field-grid">
+              <div class="field full">
+                <label for="archetypes">Playable archetypes</label>
+                <p class="hint">Use original roles rather than duplicating another game's exact heroes.</p>
+                <input id="archetypes" name="archetypes" placeholder="Vanguard, Runebinder, Falconer, Oathbreaker" />
+              </div>
+              <div class="field full">
+                <label for="companionsList">Major companions / supporting cast</label>
+                <input id="companionsList" name="companionsList" placeholder="Mira the spy, Brother Caldus, Tovin the deserter" />
+              </div>
+              <div class="field full">
+                <label for="factions">Factions</label>
+                <input id="factions" name="factions" placeholder="The Ember Court, River Guilds, Glass Monastery" />
+              </div>
+              <div class="field">
+                <label for="chapters">Story chapters</label>
+                <input id="chapters" name="chapters" type="number" min="3" max="20" value="6" />
+              </div>
+              <div class="field">
+                <label for="biomes">Major environments</label>
+                <input id="biomes" name="biomes" type="number" min="1" max="15" value="5" />
+              </div>
+              <div class="field">
+                <label for="enemyFamilies">Enemy families</label>
+                <input id="enemyFamilies" name="enemyFamilies" type="number" min="1" max="30" value="8" />
+              </div>
+              <div class="field">
+                <label for="bossCount">Major bosses</label>
+                <input id="bossCount" name="bossCount" type="number" min="1" max="20" value="6" />
+              </div>
+              <div class="field full">
+                <label for="signature">Signature mechanic</label>
+                <textarea id="signature" name="signature" placeholder="A unique mechanic that makes the game yours—for example, promises made in dialogue become combat buffs or restrictions."></textarea>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section" data-page="technical">
+            <div class="section-intro">
+              <h2>Technical Direction</h2>
+              <p>The default stack favors a maintainable Java project and data-driven content.</p>
+            </div>
+            <div class="field-grid">
+              <div class="field">
+                <label for="framework">Java framework</label>
+                <select id="framework" name="framework">
+                  <option value="libgdx">LibGDX</option>
+                  <option value="fxgl">FXGL</option>
+                  <option value="custom">Custom Java2D engine</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="javaVersion">Java version</label>
+                <select id="javaVersion" name="javaVersion">
+                  <option>Java 21 LTS</option>
+                  <option>Java 25 LTS</option>
+                  <option>Java 17 LTS</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="architecture">Game-object architecture</label>
+                <select id="architecture" name="architecture">
+                  <option value="hybrid">Hybrid components + services</option>
+                  <option value="ecs">Entity Component System</option>
+                  <option value="oop">Traditional object-oriented</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="dataFormat">Content data format</label>
+                <select id="dataFormat" name="dataFormat">
+                  <option>JSON</option>
+                  <option>YAML</option>
+                  <option>TMX + JSON</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="resolution">Reference resolution</label>
+                <input id="resolution" name="resolution" value="1920×1080" />
+              </div>
+              <div class="field">
+                <label for="artStyle">Art direction</label>
+                <input id="artStyle" name="artStyle" placeholder="Hand-painted sprites with bold silhouettes" />
+              </div>
+              <div class="field full">
+                <label for="packageName">Base Java package</label>
+                <input id="packageName" name="packageName" value="com.yourstudio.forgequest" pattern="[a-zA-Z_][\w]*(\.[a-zA-Z_][\w]*)+" />
+              </div>
+              <div class="field full">
+                <label for="constraints">Scope limits or technical constraints</label>
+                <textarea id="constraints" name="constraints" placeholder="Solo developer, placeholder art first, no dedicated servers, controller support required."></textarea>
+              </div>
+            </div>
+          </section>
+
+          <div class="form-footer">
+            <button class="button" id="previousSection" type="button">← Previous</button>
+            <div class="toolbar">
+              <button class="button" id="nextSection" type="button">Next →</button>
+              <button class="button primary" type="submit">Generate blueprint</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <aside class="panel sticky" aria-live="polite">
+        <div id="emptyState" class="empty-state">
+          <div>
+            <div class="empty-icon">📜</div>
+            <h2>Your blueprint will appear here</h2>
+            <p>Fill in your game idea, choose systems, and generate a class architecture, package tree, story structure, and production roadmap.</p>
+            <div class="notice">Use inspirations for broad genre conventions, but create original characters, maps, dialogue, art, names, and distinctive mechanics.</div>
+          </div>
+        </div>
+
+        <div id="results" class="results">
+          <div class="result-actions">
+            <strong>Generated Blueprint</strong>
+            <div>
+              <button class="button small" id="copyMarkdown" type="button">Copy Markdown</button>
+              <button class="button small" id="downloadMarkdown" type="button">Download .md</button>
+              <button class="button small" id="downloadJson" type="button">Download .json</button>
+              <button class="button small" id="printBlueprint" type="button">Print</button>
+            </div>
+          </div>
+          <div id="resultScroll" class="result-scroll"></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <div id="toast" class="toast">Saved</div>
+
+  <script>
+    const form = document.getElementById('blueprintForm');
+    const pages = [...document.querySelectorAll('.form-section')];
+    const chips = [...document.querySelectorAll('.nav-chip')];
+    const storageKey = 'forgequest-blueprint-v1';
+    let activePage = 0;
+    let latestBlueprint = null;
+    let latestMarkdown = '';
+
+    const systemCatalog = {
+      combat: {
+        label: 'Real-time combat',
+        classes: ['CombatSystem', 'AttackDefinition', 'AttackInstance', 'HitboxComponent', 'HurtboxComponent', 'DamageCalculator', 'ComboTracker', 'StaggerComponent']
+      },
+      abilities: {
+        label: 'Abilities and cooldowns',
+        classes: ['AbilitySystem', 'AbilityDefinition', 'AbilityInstance', 'CooldownComponent', 'ResourceCost', 'Effect', 'StatusEffect', 'EffectResolver']
+      },
+      classes: {
+        label: 'Playable archetypes',
+        classes: ['HeroDefinition', 'HeroFactory', 'HeroController', 'StatBlock', 'StatModifier', 'Loadout', 'ArchetypeRegistry']
+      },
+      equipment: {
+        label: 'Equipment and loot',
+        classes: ['Inventory', 'InventoryService', 'ItemDefinition', 'EquipmentItem', 'EquipmentSlot', 'LootTable', 'LootDropper', 'ItemModifier']
+      },
+      progression: {
+        label: 'Character progression',
+        classes: ['ProgressionService', 'ExperienceComponent', 'LevelCurve', 'TalentTree', 'TalentNode', 'UnlockCondition']
+      },
+      quests: {
+        label: 'Quests and objectives',
+        classes: ['QuestService', 'QuestDefinition', 'QuestState', 'Objective', 'ObjectiveTracker', 'RewardDefinition', 'QuestEvent']
+      },
+      dialogue: {
+        label: 'Dialogue system',
+        classes: ['DialogueService', 'DialogueGraph', 'DialogueNode', 'DialogueChoice', 'DialogueCondition', 'DialogueEvent', 'DialogueScreen']
+      },
+      choices: {
+        label: 'Narrative choices',
+        classes: ['StoryFlagService', 'StoryFlag', 'DecisionRecord', 'ConsequenceResolver', 'RelationshipService', 'EndingEvaluator']
+      },
+      companions: {
+        label: 'Companions',
+        classes: ['CompanionController', 'CompanionDefinition', 'CompanionAI', 'AffinityComponent', 'RecruitmentCondition', 'PartyService']
+      },
+      crafting: {
+        label: 'Crafting',
+        classes: ['CraftingService', 'RecipeDefinition', 'Ingredient', 'CraftingResult', 'UpgradeDefinition', 'VendorInventory']
+      },
+      bosses: {
+        label: 'Multi-phase bosses',
+        classes: ['BossController', 'BossDefinition', 'BossPhase', 'AttackPattern', 'ArenaTrigger', 'PhaseTransition']
+      },
+      procedural: {
+        label: 'Procedural encounters',
+        classes: ['EncounterGenerator', 'EncounterDefinition', 'SpawnTable', 'RoomTemplate', 'DifficultyBudget', 'RandomSource']
+      }
+    };
+
+    const baseClasses = {
+      core: ['GameLauncher', 'GameApplication', 'GameConfig', 'GameContext', 'GameClock', 'EventBus', 'GameEvent'],
+      screens: ['BootScreen', 'MainMenuScreen', 'GameScreen', 'PauseScreen', 'LoadingScreen', 'CreditsScreen'],
+      world: ['WorldController', 'LevelDefinition', 'LevelLoader', 'MapCollision', 'SpawnPoint', 'Checkpoint', 'InteractionZone'],
+      entities: ['GameEntity', 'EntityFactory', 'TransformComponent', 'VelocityComponent', 'SpriteComponent', 'HealthComponent', 'FactionComponent'],
+      input: ['InputRouter', 'PlayerInput', 'InputBinding', 'GamepadProfile'],
+      rendering: ['RenderSystem', 'AnimationSystem', 'AnimationDefinition', 'CameraController', 'ParticleService', 'LightingService'],
+      audio: ['AudioService', 'MusicDirector', 'SoundEvent'],
+      data: ['AssetService', 'ContentRepository', 'JsonContentLoader', 'DefinitionValidator'],
+      save: ['SaveService', 'SaveGame', 'SaveSlot', 'SaveMigration'],
+      ui: ['HudView', 'MenuView', 'NotificationView', 'TooltipView', 'UiSkin']
+    };
+
+    const example = {
+      title: 'The Last Oath',
+      genre: '2D action RPG',
+      pitch: 'A knight whose spoken promises become magical laws must choose which vows to break while defending a kingdom built on a forgotten betrayal.',
+      tone: 'Heroic with humor',
+      audience: 'Teen and adult action-RPG fans',
+      platform: 'Windows / Linux / macOS',
+      players: 'local',
+      pillars: 'Readable team combat, companions with conflicting loyalties, promises with consequences',
+      world: 'Valedorn is a chain of fortress-cities protected by oath magic. The royal order claims that vows keep monsters beyond the frontier, but the magic is actually powered by memories taken from conquered villages.',
+      hero: 'Ser Kael is a celebrated guardian who wants to protect ordinary people. His flaw is treating obedience as virtue, even when his orders cause harm.',
+      villain: 'Chancellor Veyra plans to bind the entire population to one permanent oath. She sincerely believes freedom creates war and considers enforced peace an act of mercy.',
+      inciting: 'Kael survives a failed ceremony and hears the stolen memories inside his sword, including the voice of the sibling he was told died years ago.',
+      stakes: 'Kael may lose his powers and closest allies by breaking his vows. If he fails, every citizen loses the ability to disobey the throne.',
+      theme: 'Is a promise still moral when keeping it protects an unjust system?',
+      ending: 'Kael must either destroy oath magic at the cost of the kingdom’s defenses, seize control of it, or share it with the people and accept an uncertain future.',
+      combatStyle: 'Ability-driven action RPG',
+      perspective: 'Side-view with lane movement',
+      session: '15–25 minutes',
+      difficulty: 'Readable enemy tells with optional assists',
+      loop: 'Choose a mission at the caravan hub → fight through authored encounters → investigate a faction conflict → make or break an oath → defeat an elite enemy → return to upgrade and face companion reactions.',
+      archetypes: 'Oathguard, Ash Weaver, Wind Ranger, Bell Saint',
+      companionsList: 'Nessa the rebel historian, Brann the cheerful deserter, Sister Ilyra the royal healer',
+      factions: 'The Crown Oath, Free Marches, Archive of Ash, Silent Choir',
+      chapters: '6',
+      biomes: '5',
+      enemyFamilies: '8',
+      bossCount: '6',
+      signature: 'Before major missions, the player makes an oath that grants a powerful modifier. Breaking it changes combat, companion trust, and later story scenes.',
+      framework: 'libgdx',
+      javaVersion: 'Java 21 LTS',
+      architecture: 'hybrid',
+      dataFormat: 'JSON',
+      resolution: '1920×1080',
+      artStyle: 'Painterly sprites, strong silhouettes, warm gold against storm-blue backgrounds',
+      packageName: 'com.yourstudio.lastoath',
+      constraints: 'Small team, controller-first, placeholder art during the vertical slice, no online multiplayer in version 1.'
+    };
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 1600);
+    }
+
+    function slugify(value) {
+      return (value || 'game-blueprint')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '') || 'game-blueprint';
+    }
+
+    function escapeHtml(value = '') {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function splitList(value) {
+      return String(value || '').split(',').map(item => item.trim()).filter(Boolean);
+    }
+
+    function selectedSystems() {
+      return [...form.querySelectorAll('input[name="systems"]:checked')].map(input => input.value);
+    }
+
+    function collectFormData() {
+      const data = Object.fromEntries(new FormData(form).entries());
+      data.systems = selectedSystems();
+      return data;
+    }
+
+    function saveDraft(showMessage = false) {
+      localStorage.setItem(storageKey, JSON.stringify(collectFormData()));
+      if (showMessage) showToast('Draft saved');
+      updateProgress();
+    }
+
+    function restoreDraft() {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      try { applyData(JSON.parse(raw)); } catch (error) { console.warn('Could not restore draft', error); }
+    }
+
+    function applyData(data) {
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === 'systems') {
+          form.querySelectorAll('input[name="systems"]').forEach(input => input.checked = value.includes(input.value));
+          return;
+        }
+        const field = form.elements[key];
+        if (field) field.value = value;
+      });
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const important = ['title', 'pitch', 'world', 'hero', 'villain', 'inciting', 'stakes', 'theme', 'loop', 'archetypes', 'signature', 'constraints'];
+      const data = collectFormData();
+      const completed = important.filter(key => String(data[key] || '').trim()).length + (data.systems.length ? 1 : 0);
+      const percentage = Math.round((completed / (important.length + 1)) * 100);
+      document.getElementById('progressText').textContent = `${percentage}%`;
+      document.getElementById('progressBar').style.width = `${percentage}%`;
+    }
+
+    function setPage(index) {
+      activePage = Math.max(0, Math.min(pages.length - 1, index));
+      pages.forEach((page, i) => page.classList.toggle('active', i === activePage));
+      chips.forEach((chip, i) => chip.classList.toggle('active', i === activePage));
+      document.getElementById('previousSection').disabled = activePage === 0;
+      document.getElementById('nextSection').style.display = activePage === pages.length - 1 ? 'none' : '';
+    }
+
+    function frameworkName(value) {
+      return ({ libgdx: 'LibGDX', fxgl: 'FXGL', custom: 'Java2D' })[value] || value;
+    }
+
+    function architectureText(value) {
+      if (value === 'ecs') return 'Entity Component System: components hold data, systems hold behavior, and entities remain lightweight IDs.';
+      if (value === 'oop') return 'Traditional object-oriented model: a small inheritance tree with composition for optional behavior.';
+      return 'Hybrid components + services: entity components store runtime state while domain services coordinate combat, quests, dialogue, saving, and content loading.';
+    }
+
+    function packageTree(data) {
+      const root = (data.packageName || 'com.yourstudio.game').replaceAll('.', '/');
+      const dynamic = data.systems.map(system => `│   ├── ${system}/`).join('\n');
+      const frameworkModule = data.framework === 'libgdx' ? '├── lwjgl3/                 # Desktop launcher\n' : '';
+      return `${slugify(data.title)}/
+├── assets/
+│   ├── audio/
+│   ├── data/
+│   │   ├── dialogue/
+│   │   ├── enemies/
+│   │   ├── heroes/
+│   │   ├── items/
+│   │   ├── levels/
+│   │   └── quests/
+│   ├── maps/
+│   ├── shaders/
+│   ├── sprites/
+│   └── ui/
+├── core/
+│   └── src/main/java/${root}/
+│       ├── core/
+│       ├── screen/
+│       ├── world/
+│       ├── entity/
+│       ├── input/
+│       ├── rendering/
+│       ├── audio/
+│       ├── data/
+│       ├── save/
+│       ├── ui/
+${dynamic || '│       └── gameplay/'}
+${frameworkModule}├── build.gradle
+└── settings.gradle`;
+    }
+
+    function makeStoryBeats(data) {
+      const chapters = Math.max(3, Number(data.chapters) || 6);
+      const beats = [];
+      const chapterNames = ['The Disruption', 'Crossing the Line', 'Allies and Enemies', 'The Cost of Truth', 'The Collapse', 'Final Reckoning'];
+      for (let i = 1; i <= chapters; i++) {
+        const progress = i / chapters;
+        let purpose;
+        if (i === 1) purpose = `Establish ${data.hero || 'the protagonist'}, normal life, combat fundamentals, and the inciting incident: ${data.inciting || 'a crisis that makes retreat impossible'}.`;
+        else if (progress <= 0.34) purpose = `Enter the wider conflict, introduce a major faction, and force the hero to make an early commitment connected to “${data.theme || 'the central theme'}.”`;
+        else if (progress <= 0.58) purpose = `Deepen companion relationships, reveal a partial truth about ${data.villain || 'the antagonist'}, and turn a gameplay victory into a narrative complication.`;
+        else if (progress <= 0.76) purpose = `Reveal the hidden cost behind the conflict. The hero’s flaw causes a serious loss, and the signature mechanic creates a consequence the player cannot ignore.`;
+        else if (i < chapters) purpose = `Bring factions and companions into open conflict. Remove a source of safety, escalate the stakes—${data.stakes || 'personal and global loss'}—and prepare the final decision.`;
+        else purpose = `Resolve the confrontation with the antagonist through a mechanically meaningful final choice. Intended ending: ${data.ending || 'show the cost of victory and the protagonist’s transformation'}.`;
+        beats.push({ chapter: `Chapter ${i}`, title: chapterNames[i - 1] || `Escalation ${i}`, purpose });
+      }
+      return beats;
+    }
+
+    function makeClassGroups(data) {
+      const groups = JSON.parse(JSON.stringify(baseClasses));
+      data.systems.forEach(system => { groups[system] = systemCatalog[system].classes; });
+
+      if (data.players === 'local' || data.players === 'both') {
+        groups.multiplayer = [...(groups.multiplayer || []), 'LocalPlayerManager', 'PlayerJoinService', 'SharedCameraController', 'ReviveSystem'];
+      }
+      if (data.players === 'online' || data.players === 'both') {
+        groups.network = ['NetworkService', 'NetworkMessage', 'LobbyService', 'PlayerSnapshot', 'InputCommand', 'StateReconciler', 'DisconnectHandler'];
+      }
+      return groups;
+    }
+
+    function makeRoadmap(data) {
+      const hasOnline = data.players === 'online' || data.players === 'both';
+      return [
+        {
+          phase: 'Phase 1',
+          title: 'Combat sandbox',
+          detail: 'Implement movement, camera, one hero, one enemy, attacks, damage, hit reactions, controller input, and debug rendering. Use placeholder assets.'
+        },
+        {
+          phase: 'Phase 2',
+          title: 'Vertical slice',
+          detail: `Build one polished 10–15 minute mission with one archetype, 3–4 enemy types, one boss phase, dialogue, a quest, saving, and the signature mechanic: ${data.signature || 'your original differentiating system'}.`
+        },
+        {
+          phase: 'Phase 3',
+          title: 'Content pipeline',
+          detail: `Move heroes, enemies, abilities, dialogue, loot, and quests into ${data.dataFormat || 'JSON'} files. Add schema validation and editor-friendly IDs before producing more content.`
+        },
+        {
+          phase: 'Phase 4',
+          title: 'Systems and story production',
+          detail: `Complete the hub, progression, selected systems, ${data.chapters || 6} chapters, and repeatable encounter templates. Test story flags and save compatibility continuously.`
+        },
+        {
+          phase: 'Phase 5',
+          title: hasOnline ? 'Networking, polish, and release' : 'Polish and release',
+          detail: hasOnline
+            ? 'Prototype network synchronization before full content production; then add accessibility, performance profiling, balancing, localization support, and release builds.'
+            : 'Add accessibility, remapping, assists, performance profiling, balancing, localization support, achievements if desired, and signed release builds.'
+        }
+      ];
+    }
+
+    function makeRisks(data) {
+      const risks = [];
+      if (data.players === 'online' || data.players === 'both') risks.push('Online co-op can multiply engineering and testing cost. Build a networked combat prototype before committing to full production.');
+      if (data.systems.length >= 9) risks.push(`The design currently selects ${data.systems.length} major systems. Freeze nonessential systems until the vertical slice proves the core loop.`);
+      if ((Number(data.chapters) || 0) > 8) risks.push('A long campaign creates heavy writing, level-design, art, testing, and save-state costs. Consider shipping a shorter first arc.');
+      if ((Number(data.biomes) || 0) > 6) risks.push('Environment count is high for a small team. Reuse modular tiles, props, lighting profiles, and encounter rules.');
+      if ((Number(data.enemyFamilies) || 0) > 12) risks.push('Enemy variety is expensive because every family needs art, animation, audio, balance, and AI testing.');
+      risks.push('Do not reproduce another game’s protected characters, exact level layouts, dialogue, art, music, names, or distinctive presentation. Keep the genre inspiration but build original expression.');
+      risks.push('Avoid hard-coding story progress in screens. Store quests, dialogue nodes, flags, and consequences as stable IDs in data files.');
+      return risks;
+    }
+
+    function makeBlueprint(data) {
+      const archetypes = splitList(data.archetypes);
+      const companions = splitList(data.companionsList);
+      const factions = splitList(data.factions);
+      const systems = data.systems.map(id => systemCatalog[id]?.label || id);
+      const classes = makeClassGroups(data);
+      const storyBeats = makeStoryBeats(data);
+      const roadmap = makeRoadmap(data);
+      const risks = makeRisks(data);
+
+      return {
+        generatedAt: new Date().toISOString(),
+        identity: {
+          title: data.title || 'Untitled Game',
+          genre: data.genre,
+          pitch: data.pitch,
+          tone: data.tone,
+          audience: data.audience,
+          platform: data.platform,
+          playerMode: data.players,
+          pillars: splitList(data.pillars)
+        },
+        story: {
+          world: data.world,
+          protagonist: data.hero,
+          antagonist: data.villain,
+          incitingIncident: data.inciting,
+          stakes: data.stakes,
+          theme: data.theme,
+          intendedEnding: data.ending,
+          beats: storyBeats
+        },
+        gameplay: {
+          combatStyle: data.combatStyle,
+          perspective: data.perspective,
+          sessionLength: data.session,
+          difficulty: data.difficulty,
+          coreLoop: data.loop,
+          systems,
+          signatureMechanic: data.signature
+        },
+        content: {
+          archetypes,
+          companions,
+          factions,
+          chapters: Number(data.chapters) || 6,
+          biomes: Number(data.biomes) || 5,
+          enemyFamilies: Number(data.enemyFamilies) || 8,
+          bosses: Number(data.bossCount) || 6
+        },
+        technical: {
+          framework: frameworkName(data.framework),
+          javaVersion: data.javaVersion,
+          architecture: architectureText(data.architecture),
+          dataFormat: data.dataFormat,
+          referenceResolution: data.resolution,
+          artStyle: data.artStyle,
+          basePackage: data.packageName,
+          constraints: data.constraints,
+          packageTree: packageTree(data),
+          classGroups: classes
+        },
+        roadmap,
+        risks
+      };
+    }
+
+    function renderBlueprint(bp) {
+      const classSections = Object.entries(bp.technical.classGroups).map(([group, classNames]) => `
+        <div class="card">
+          <h4>${escapeHtml(group[0].toUpperCase() + group.slice(1))}</h4>
+          <p>${classNames.map(escapeHtml).join('<br>')}</p>
+        </div>`).join('');
+
+      const storyHtml = bp.story.beats.map(beat => `
+        <div class="timeline-item">
+          <div class="timeline-label">${escapeHtml(beat.chapter)}</div>
+          <div class="timeline-body"><strong>${escapeHtml(beat.title)}</strong><p>${escapeHtml(beat.purpose)}</p></div>
+        </div>`).join('');
+
+      const roadmapHtml = bp.roadmap.map(item => `
+        <div class="timeline-item">
+          <div class="timeline-label">${escapeHtml(item.phase)}</div>
+          <div class="timeline-body"><strong>${escapeHtml(item.title)}</strong><p>${escapeHtml(item.detail)}</p></div>
+        </div>`).join('');
+
+      const archetypeCards = bp.content.archetypes.length
+        ? bp.content.archetypes.map((name, i) => `<div class="card"><h4>${escapeHtml(name)}</h4><p>Define this hero’s role, movement trait, basic combo, defensive tool, three abilities, ultimate, strengths, weakness, and story conflict.</p></div>`).join('')
+        : '<p class="muted">Add playable archetypes to generate hero design prompts.</p>';
+
+      const result = document.getElementById('resultScroll');
+      result.innerHTML = `
+        <div class="blueprint-title">
+          <h2>${escapeHtml(bp.identity.title)}</h2>
+          <p>${escapeHtml(bp.identity.pitch || 'No pitch provided.')}</p>
+          <div class="tag-row" style="margin-top:12px">
+            <span class="tag">${escapeHtml(bp.identity.genre)}</span>
+            <span class="tag">${escapeHtml(bp.identity.tone)}</span>
+            <span class="tag">${escapeHtml(bp.technical.framework)}</span>
+            <span class="tag">${escapeHtml(bp.technical.javaVersion)}</span>
+          </div>
+        </div>
+
+        <details class="result-block" open>
+          <summary>Creative direction</summary>
+          <div class="result-content">
+            <h3>Design pillars</h3>
+            <div class="tag-row">${(bp.identity.pillars.length ? bp.identity.pillars : ['Add three design pillars']).map(p => `<span class="tag">${escapeHtml(p)}</span>`).join('')}</div>
+            <h3 style="margin-top:16px">Theme</h3>
+            <p>${escapeHtml(bp.story.theme || 'Define the dramatic question that major choices and encounters will test.')}</p>
+            <h3>Signature mechanic</h3>
+            <p>${escapeHtml(bp.gameplay.signatureMechanic || 'Define one original mechanic that connects combat to story consequences.')}</p>
+          </div>
+        </details>
+
+        <details class="result-block" open>
+          <summary>Core gameplay design</summary>
+          <div class="result-content">
+            <p><strong>Loop:</strong> ${escapeHtml(bp.gameplay.coreLoop || 'Mission selection → combat and exploration → story consequence → reward and upgrade → next mission.')}</p>
+            <p><strong>Combat:</strong> ${escapeHtml(bp.gameplay.combatStyle)} · ${escapeHtml(bp.gameplay.perspective)} · ${escapeHtml(bp.gameplay.sessionLength || 'Unspecified session length')}</p>
+            <p><strong>Difficulty:</strong> ${escapeHtml(bp.gameplay.difficulty || 'Unspecified')}</p>
+            <h3>Selected systems</h3>
+            <div class="tag-row">${bp.gameplay.systems.map(s => `<span class="tag">${escapeHtml(s)}</span>`).join('')}</div>
+          </div>
+        </details>
+
+        <details class="result-block" open>
+          <summary>Story architecture</summary>
+          <div class="result-content">
+            <p><strong>World:</strong> ${escapeHtml(bp.story.world || 'Not provided')}</p>
+            <p><strong>Protagonist:</strong> ${escapeHtml(bp.story.protagonist || 'Not provided')}</p>
+            <p><strong>Antagonist:</strong> ${escapeHtml(bp.story.antagonist || 'Not provided')}</p>
+            <p><strong>Stakes:</strong> ${escapeHtml(bp.story.stakes || 'Not provided')}</p>
+            <div class="timeline">${storyHtml}</div>
+          </div>
+        </details>
+
+        <details class="result-block">
+          <summary>Playable archetype prompts</summary>
+          <div class="result-content"><div class="cards">${archetypeCards}</div></div>
+        </details>
+
+        <details class="result-block" open>
+          <summary>Java class list</summary>
+          <div class="result-content">
+            <p>Keep definitions immutable where practical, runtime state separate from content data, and cross-system communication event-driven.</p>
+            <div class="cards">${classSections}</div>
+          </div>
+        </details>
+
+        <details class="result-block">
+          <summary>Recommended package tree</summary>
+          <div class="result-content"><pre class="tree">${escapeHtml(bp.technical.packageTree)}</pre></div>
+        </details>
+
+        <details class="result-block" open>
+          <summary>Production roadmap</summary>
+          <div class="result-content"><div class="timeline">${roadmapHtml}</div></div>
+        </details>
+
+        <details class="result-block">
+          <summary>Scope and implementation risks</summary>
+          <div class="result-content"><ul>${bp.risks.map(risk => `<li>${escapeHtml(risk)}</li>`).join('')}</ul></div>
+        </details>
+
+        <details class="result-block">
+          <summary>Definition of done for the vertical slice</summary>
+          <div class="result-content">
+            <ul>
+              <li>One complete mission can be played from menu to results screen without developer tools.</li>
+              <li>Movement, combat, one hero kit, enemies, a boss phase, UI, audio, dialogue, saving, and loading work together.</li>
+              <li>The signature mechanic changes both gameplay and at least one later conversation.</li>
+              <li>All content definitions load from ${escapeHtml(bp.technical.dataFormat)} and invalid IDs produce useful errors.</li>
+              <li>Keyboard and controller controls are remappable; common readability and difficulty assists exist.</li>
+              <li>A clean build runs on the target platform with no critical errors or lost save progress.</li>
+            </ul>
+          </div>
+        </details>`;
+
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('results').classList.add('visible');
+      if (window.innerWidth <= 1050) document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function blueprintToMarkdown(bp) {
+      const classList = Object.entries(bp.technical.classGroups)
+        .map(([group, values]) => `### ${group[0].toUpperCase() + group.slice(1)}\n${values.map(v => `- \`${v}\``).join('\n')}`)
+        .join('\n\n');
+      return `# ${bp.identity.title} — Game Blueprint
+
+Generated: ${bp.generatedAt}
+
+## High Concept
+
+**Genre:** ${bp.identity.genre}  
+**Tone:** ${bp.identity.tone}  
+**Target platform:** ${bp.identity.platform}  
+**Audience:** ${bp.identity.audience || 'Not specified'}
+
+${bp.identity.pitch || 'No pitch provided.'}
+
+### Design Pillars
+${(bp.identity.pillars.length ? bp.identity.pillars : ['Not specified']).map(v => `- ${v}`).join('\n')}
+
+## Story Foundation
+
+**World:** ${bp.story.world || 'Not specified'}
+
+**Protagonist:** ${bp.story.protagonist || 'Not specified'}
+
+**Antagonist:** ${bp.story.antagonist || 'Not specified'}
+
+**Inciting incident:** ${bp.story.incitingIncident || 'Not specified'}
+
+**Stakes:** ${bp.story.stakes || 'Not specified'}
+
+**Theme:** ${bp.story.theme || 'Not specified'}
+
+**Intended ending:** ${bp.story.intendedEnding || 'Not specified'}
+
+### Chapter Structure
+${bp.story.beats.map(b => `- **${b.chapter}: ${b.title}** — ${b.purpose}`).join('\n')}
+
+## Gameplay
+
+**Core loop:** ${bp.gameplay.coreLoop || 'Not specified'}
+
+**Combat:** ${bp.gameplay.combatStyle}; ${bp.gameplay.perspective}  
+**Mission length:** ${bp.gameplay.sessionLength || 'Not specified'}  
+**Difficulty:** ${bp.gameplay.difficulty || 'Not specified'}
+
+### Systems
+${bp.gameplay.systems.map(v => `- ${v}`).join('\n')}
+
+### Signature Mechanic
+${bp.gameplay.signatureMechanic || 'Not specified'}
+
+## Content Targets
+
+- Chapters: ${bp.content.chapters}
+- Environments: ${bp.content.biomes}
+- Enemy families: ${bp.content.enemyFamilies}
+- Major bosses: ${bp.content.bosses}
+- Archetypes: ${bp.content.archetypes.join(', ') || 'Not specified'}
+- Companions: ${bp.content.companions.join(', ') || 'Not specified'}
+- Factions: ${bp.content.factions.join(', ') || 'Not specified'}
+
+## Technical Direction
+
+- Framework: ${bp.technical.framework}
+- Java: ${bp.technical.javaVersion}
+- Architecture: ${bp.technical.architecture}
+- Content format: ${bp.technical.dataFormat}
+- Reference resolution: ${bp.technical.referenceResolution}
+- Art style: ${bp.technical.artStyle || 'Not specified'}
+- Base package: \`${bp.technical.basePackage}\`
+- Constraints: ${bp.technical.constraints || 'Not specified'}
+
+## Java Class List
+
+${classList}
+
+## Package Tree
+
+\`\`\`text
+${bp.technical.packageTree}
+\`\`\`
+
+## Production Roadmap
+
+${bp.roadmap.map(v => `### ${v.phase}: ${v.title}\n${v.detail}`).join('\n\n')}
+
+## Risks and Guardrails
+
+${bp.risks.map(v => `- ${v}`).join('\n')}
+
+## Vertical Slice Definition of Done
+
+- One complete mission runs from menu to results screen.
+- One hero, multiple enemy types, one boss phase, UI, audio, dialogue, saving, and loading work together.
+- The signature mechanic affects both gameplay and story.
+- Content loads from ${bp.technical.dataFormat} with validation.
+- Keyboard and controller controls are remappable.
+- A clean build runs on the target platform without critical errors.
+`;
+    }
+
+    function downloadFile(filename, content, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    chips.forEach((chip, index) => chip.addEventListener('click', () => setPage(index)));
+    document.getElementById('previousSection').addEventListener('click', () => setPage(activePage - 1));
+    document.getElementById('nextSection').addEventListener('click', () => setPage(activePage + 1));
+
+    form.addEventListener('input', () => saveDraft(false));
+    form.addEventListener('change', () => saveDraft(false));
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      const data = collectFormData();
+      latestBlueprint = makeBlueprint(data);
+      latestMarkdown = blueprintToMarkdown(latestBlueprint);
+      renderBlueprint(latestBlueprint);
+      saveDraft(false);
+      showToast('Blueprint generated');
+    });
+
+    document.getElementById('loadExample').addEventListener('click', () => {
+      applyData({ ...example, systems: ['combat', 'abilities', 'classes', 'equipment', 'progression', 'quests', 'dialogue', 'choices', 'companions', 'bosses'] });
+      saveDraft(false);
+      showToast('Example loaded');
+    });
+
+    document.getElementById('clearDraft').addEventListener('click', () => {
+      if (!confirm('Clear all blueprint fields and the locally saved draft?')) return;
+      localStorage.removeItem(storageKey);
+      form.reset();
+      document.getElementById('chapters').value = 6;
+      document.getElementById('biomes').value = 5;
+      document.getElementById('enemyFamilies').value = 8;
+      document.getElementById('bossCount').value = 6;
+      document.getElementById('packageName').value = 'com.yourstudio.forgequest';
+      document.getElementById('resolution').value = '1920×1080';
+      document.getElementById('results').classList.remove('visible');
+      document.getElementById('emptyState').style.display = '';
+      latestBlueprint = null;
+      latestMarkdown = '';
+      setPage(0);
+      updateProgress();
+      showToast('Draft cleared');
+    });
+
+    document.getElementById('copyMarkdown').addEventListener('click', async () => {
+      if (!latestMarkdown) return;
+      try {
+        await navigator.clipboard.writeText(latestMarkdown);
+        showToast('Markdown copied');
+      } catch {
+        showToast('Clipboard unavailable');
+      }
+    });
+
+    document.getElementById('downloadMarkdown').addEventListener('click', () => {
+      if (!latestBlueprint) return;
+      downloadFile(`${slugify(latestBlueprint.identity.title)}-blueprint.md`, latestMarkdown, 'text/markdown;charset=utf-8');
+    });
+
+    document.getElementById('downloadJson').addEventListener('click', () => {
+      if (!latestBlueprint) return;
+      downloadFile(`${slugify(latestBlueprint.identity.title)}-blueprint.json`, JSON.stringify(latestBlueprint, null, 2), 'application/json;charset=utf-8');
+    });
+
+    document.getElementById('printBlueprint').addEventListener('click', () => window.print());
+
+    restoreDraft();
+    setPage(0);
+    updateProgress();
+  </script>
+</body>
+</html>
